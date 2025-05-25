@@ -1,9 +1,10 @@
-(* # Données *)
-let chemin_dossier = Filename.dirname Sys.argv.(0)
-let fichier_options = Filename.concat chemin_dossier "minmax_options.txt"
 
 (* # Importations *)
 Random.self_init()
+
+(* # Données *)
+let chemin_dossier = Filename.dirname Sys.argv.(0)
+let fichier_options = Filename.concat chemin_dossier "minmax_options.txt"
 
 (* # Fonctions utilitaires *)
 	(**	Convertit la saisie utilisateur en entier sécurisé
