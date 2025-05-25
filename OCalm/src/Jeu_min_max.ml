@@ -19,7 +19,7 @@ let fichier_options = Filename.concat chemin_dossier "minmax_options.txt"
 			match int_of_string_opt saisie with
 			| Some valeur when valeur >= min && valeur <= max -> valeur
 			| _ ->
-				Printf.printf "\nVeuillez entrer un entier entre %d et %d.%!" min max;
+				Printf.printf "\nVeuillez entrer un entier entre %d et %d.\n%!" min max;
 				boucle()
 		in
 		boucle()
