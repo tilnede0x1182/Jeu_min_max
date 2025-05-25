@@ -1,0 +1,1 @@
+Le but de cet exercice est d'avoir un support basique pour m'entraîner sur la syntaxe de plusieurs langages différents.

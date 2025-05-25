@@ -1,5 +1,6 @@
 # Données
-FICHIER_OPTIONS = "minmax_options.txt"
+CHEMIN_DOSSIER = File.dirname(__FILE__)
+FICHIER_OPTIONS = File.join(CHEMIN_DOSSIER, "minmax_options.txt")
 
 # Importations
 
