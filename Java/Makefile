@@ -19,8 +19,8 @@ jar: compile
 	@mkdir -p ./build_jar
 	jar cfe build_jar/MinMax.jar MinMax -C build_classes .
 
-javadoc:
+generate_javadoc:
 	@mkdir -p ./javadoc
-	javadoc -d javadoc src/MinMax.java
+	javadoc -d javadoc -private src/MinMax.java
 
 run_jar: jar run
