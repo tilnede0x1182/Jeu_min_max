@@ -1,13 +1,25 @@
 @echo off
+:: # Lancement du programme, doit être fait au début.
 goto :main
 
 REM === UTILITAIRES AVEC VARIABLES DE SUIVI ===
+:: /**
+:: * Demande un entier à l'utilisateur, contrôle les bornes, redirige selon le contexte.
+:: * @param %~1 prompt
+:: * @param %~2 min
+:: * @param %~3 max
+:: * @param %~4 mode_retour
+:: */
 :lire_entier
 	REM Paramètres: prompt, min, max, mode_retour
 	set "promptTexte=%~1"
 	set "minVal=%~2"
 	set "maxVal=%~3"
 	set "mode_retour=%~4"
+
+:: /**
+:: * Boucle de saisie pour lire_entier, recommence tant que la valeur n'est pas correcte.
+:: */
 :lire_entier_loop
 	set "nonChiffre="
 	set /p saisie=%promptTexte%
@@ -26,6 +38,10 @@ REM === UTILITAIRES AVEC VARIABLES DE SUIVI ===
 		if "%mode_retour%"=="jeu" goto traiter_jeu
 		exit /b
 	)
+
+:: /**
+:: * Message d'erreur et relance de la boucle de saisie dans lire_entier.
+:: */
 :lire_entier_erreur
 	echo.
 	echo Veuillez entrer un entier entre %minVal% et %maxVal%.
@@ -33,10 +49,20 @@ REM === UTILITAIRES AVEC VARIABLES DE SUIVI ===
 	goto lire_entier_loop
 
 REM === LECTURE ENTIER SANS LIMITE (pour config) ===
+
+:: /**
+:: * Demande un entier sans limite pour la configuration, puis redirige.
+:: * @param %~1 prompt
+:: * @param %~2 mode_retour
+:: */
 :lire_entier_libre
 	echo.
 	set "promptTexte=%~1"
 	set "mode_retour=%~2"
+
+:: /**
+:: * Boucle de saisie pour lire_entier_libre, recommence tant que la valeur n'est pas correcte.
+:: */
 :lire_entier_libre_loop
 	set "nonChiffre="
 	set /p saisie=%promptTexte%
@@ -50,6 +76,10 @@ REM === LECTURE ENTIER SANS LIMITE (pour config) ===
 	if "%mode_retour%"=="config_max" goto traiter_config_max
 	if "%mode_retour%"=="config_tours" goto traiter_config_tours
 	exit /b
+
+:: /**
+:: * Message d'erreur et relance de la boucle de saisie dans lire_entier_libre.
+:: */
 :lire_entier_libre_erreur
 	echo.
 	echo Veuillez entrer un entier valide.
@@ -57,6 +87,17 @@ REM === LECTURE ENTIER SANS LIMITE (pour config) ===
 	goto lire_entier_libre_loop
 
 REM === FONCTION AVEC RÉAFFICHAGE MENU ===
+
+:: /**
+:: * Affiche un menu, puis demande un entier borné à l'utilisateur, redirige selon la saisie.
+:: * @param %~1 menuFunction
+:: * @param %~2 prompt
+:: * @param %~3 min
+:: * @param %~4 max
+:: * @param %~5 param1
+:: * @param %~6 param2
+:: * @param %~7 param3
+:: */
 :lire_entier_avec_menu
 	set "menuFunction=%~1"
 	set "promptTexte=%~2"
@@ -65,6 +106,10 @@ REM === FONCTION AVEC RÉAFFICHAGE MENU ===
 	set "param1=%~5"
 	set "param2=%~6"
 	set "param3=%~7"
+
+:: /**
+:: * Boucle de saisie pour lire_entier_avec_menu, réaffiche le menu à chaque essai incorrect.
+:: */
 :lemenu_loop
 	call :%menuFunction% %param1% %param2% %param3%
 	set "nonChiffre="
@@ -77,12 +122,19 @@ REM === FONCTION AVEC RÉAFFICHAGE MENU ===
 		set lireEntierRet=%nombre%
 		exit /b
 	)
+
+:: /**
+:: * Message d'erreur et relance de la boucle de saisie dans lire_entier_avec_menu.
+:: */
 :lemenu_mauvais
 	echo.
 	echo Veuillez entrer un entier entre %minVal% et %maxVal%.
 	echo.
 	goto lemenu_loop
 
+:: /**
+:: * Affiche le menu principal du programme.
+:: */
 :afficher_menu_principal
 	echo.
 	echo #### Menu ####
@@ -91,6 +143,12 @@ REM === FONCTION AVEC RÉAFFICHAGE MENU ===
 	echo 3 : Quitter
 	exit /b
 
+:: /**
+:: * Affiche le menu des options, incluant les valeurs actuelles.
+:: * @param %1 min
+:: * @param %2 max
+:: * @param %3 tours
+:: */
 :afficher_menu_options
 	echo.
 	echo #### Menu options ####
@@ -98,6 +156,10 @@ REM === FONCTION AVEC RÉAFFICHAGE MENU ===
 	echo 2 : Nombre de tours max (actuellement : %3)
 	exit /b
 
+:: /**
+:: * Gère la configuration : lecture ou écriture des valeurs dans le fichier.
+:: * @param %~1 action ('lire' ou 'ecrire')
+:: */
 :gestion_config
 	set "action=%~1"
 	set "FICHIER_OPTIONS=%~dp0minmax_options.txt"
@@ -123,22 +185,35 @@ REM === FONCTION AVEC RÉAFFICHAGE MENU ===
 	exit /b
 
 REM === TRAITEMENTS SELON CONTEXTE ===
+
+:: /**
+:: * Traite le choix du menu principal (jouer, options, quitter).
+:: */
 :traiter_menu_principal
 	if "%lireEntierRet%"=="1" goto lancer_jeu
 	if "%lireEntierRet%"=="2" goto menu_options_loop
 	if "%lireEntierRet%"=="3" goto fin
 	goto menu_principal_loop
 
+:: /**
+:: * Traite le choix du menu des options (limites, nombre de tours).
+:: */
 :traiter_menu_options
 	if "%lireEntierRet%"=="1" goto configurer_limites
 	if "%lireEntierRet%"=="2" goto configurer_tours_solo
 	goto fin_options
 
+:: /**
+:: * Enregistre la nouvelle valeur minimale puis demande la valeur maximale.
+:: */
 :traiter_config_min
 	set min=%lireEntierRet%
 	call :lire_entier_libre "Max = " config_max
 	exit /b
 
+:: /**
+:: * Vérifie que max > min, sinon relance la saisie, sinon retourne aux options.
+:: */
 :traiter_config_max
 	REM Vérification que max > min
 	if %lireEntierRet% LEQ %min% (
@@ -151,10 +226,16 @@ REM === TRAITEMENTS SELON CONTEXTE ===
 	set max=%lireEntierRet%
 	goto fin_options
 
+:: /**
+:: * Enregistre le nombre de tours maximum puis retourne aux options.
+:: */
 :traiter_config_tours
 	set tours=%lireEntierRet%
 	goto fin_options
 
+:: /**
+:: * Gère la logique d'un tour de jeu (comparaison, victoire, poursuite ou fin).
+:: */
 :traiter_jeu
 	set choix=%lireEntierRet%
 	setlocal EnableDelayedExpansion
@@ -170,6 +251,10 @@ REM === TRAITEMENTS SELON CONTEXTE ===
 	exit /b
 
 REM === BOUCLES PRINCIPALES ===
+
+:: /**
+:: * Boucle principale du menu, attend et traite le choix de l'utilisateur.
+:: */
 :menu_principal_loop
 	call :lire_entier_avec_menu afficher_menu_principal "? = " 1 3
 	set choixMenu=%lireEntierRet%
@@ -178,6 +263,9 @@ REM === BOUCLES PRINCIPALES ===
 	if "%choixMenu%"=="3" goto fin
 	goto menu_principal_loop
 
+:: /**
+:: * Boucle du menu d'options, traite la navigation dans les options.
+:: */
 :menu_options_loop
 	call :lire_entier_avec_menu afficher_menu_options "? = " 1 2 %min% %max% %tours%
 	set choixOpt=%lireEntierRet%
@@ -185,32 +273,55 @@ REM === BOUCLES PRINCIPALES ===
 	if "%choixOpt%"=="2" goto configurer_tours_solo
 	goto fin_options
 
+:: /**
+:: * Lance la saisie des nouvelles limites min et max.
+:: */
 :configurer_limites
 	call :lire_entier_libre "Min = " config_min
 	exit /b
 
+:: /**
+:: * Lance la saisie du nombre maximal de tours.
+:: */
 :configurer_tours_solo
 	call :lire_entier_libre "Tours max = " config_tours
 	exit /b
 
+:: /**
+:: * Enregistre la configuration puis retourne au menu principal.
+:: */
 :fin_options
 	call :gestion_config ecrire
 	goto menu_principal_loop
 
+:: /**
+:: * Initialise la partie (tirage aléatoire, compteur de tours), puis lance la saisie.
+:: */
 :lancer_jeu
 	setlocal EnableDelayedExpansion
-	set /a intervalle=max-min+1
-	set /a cible=!RANDOM! %% !intervalle! + !min!
+	REM Conversion en entier pour éliminer les espaces
+	set /a minClean=!min!
+	set /a maxClean=!max!
+	set /a toursClean=!tours!
+	set /a intervalle=maxClean-minClean+1
+	set /a cible=!RANDOM! %% !intervalle! + !minClean!
 	set jeu_tour=1
 	echo.
-	echo Trouvez entre !min! et !max! en !tours! tours
+	echo Trouvez entre !minClean! et !maxClean! en !toursClean! tours
 	call :lire_entier "Tour !jeu_tour! : " !min! !max! jeu
 	exit /b
-
+	
 REM === PROGRAMME PRINCIPAL ===
+
+:: /**
+:: * Point d'entrée du programme, charge la config puis lance le menu principal.
+:: */
 :main
 	call :gestion_config lire
 	goto menu_principal_loop
 
+:: /**
+:: * Termine le programme proprement.
+:: */
 :fin
 	exit /b
