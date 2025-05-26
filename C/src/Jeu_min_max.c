@@ -3,12 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <limits.h>
 #include <libgen.h>
 
 // # Données
-#define OPTIONS_FILENAME "data/minmax_options.txt"
+#define OPTIONS_FILENAME "../data/minmax_options.txt"
 
 // # Fonctions utilitaires
 // ## Construction du chemin du fichier d'options
@@ -56,12 +57,27 @@ void charger_options(int *min,int *max,int *tours,const char *path){
 
 // ## Sauvegarde des options
 /**
-	Sauvegarde min, max, tours dans le fichier
+	Sauvegarde min, max, tours dans le fichier, crée data/ si nécessaire
 */
 void sauvegarder_options(int min,int max,int tours,const char *path){
-	FILE *fichier=fopen(path,"w");
-	if(fichier){fprintf(fichier,"%d,%d,%d",min,max,tours);fclose(fichier);}
+	char dossier[PATH_MAX];
+	strncpy(dossier, path, PATH_MAX-1);
+	dossier[PATH_MAX-1] = '\0';
+
+	// Retire le nom de fichier pour n'avoir que le dossier
+	char *slash = strrchr(dossier, '/');
+	if(slash){
+		*slash = '\0';
+		mkdir(dossier, 0755); // crée ./data si manquant
+	}
+
+	FILE *fichier = fopen(path, "w");
+	if(fichier){
+		fprintf(fichier, "%d,%d,%d", min, max, tours);
+		fclose(fichier);
+	}
 }
+
 
 // # Fonctions principales
 /**
