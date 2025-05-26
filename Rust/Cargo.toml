@@ -1,0 +1,11 @@
+[package]
+name = "Jeu_min_max"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.8"
+
+[[bin]]
+name = "Jeu_min_max"
+path = "src/Jeu_min_max.rs"
