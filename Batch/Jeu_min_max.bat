@@ -1,103 +1,62 @@
 @echo off
+goto :main
 
-ping 127.0.0.1 -n 1 >nul
-
-REM # Données
-	set "CHEMIN_DOSSIER=%~dp0"
-	set "FICHIER_OPTIONS=%CHEMIN_DOSSIER%minmax_options.txt"
-
-REM # Lancement du programme - DOIT ETRE AU DEBUT
-call :main
-goto fin
-
-REM # Fonctions utilitaires
-REM ## Lecture d'un entier utilisateur sécurisé
+REM === UTILITAIRES AVEC VARIABLES DE SUIVI ===
 :lire_entier
+	REM Paramètres: prompt, min, max, mode_retour
 	set "promptTexte=%~1"
 	set "minVal=%~2"
 	set "maxVal=%~3"
-:le_loop
+	set "mode_retour=%~4"
+:lire_entier_loop
 	set "nonChiffre="
 	set /p saisie=%promptTexte%
-	if "%saisie%"=="" (
-		goto mauvais
-	)
+	if "%saisie%"=="" goto lire_entier_erreur
 	for /f "delims=0123456789" %%C in ("%saisie%") do set nonChiffre=%%C
-	if defined nonChiffre (
-		goto mauvais
-	)
+	if defined nonChiffre goto lire_entier_erreur
 	set /a nombre=%saisie% 2>nul
 	if %nombre% GEQ %minVal% if %nombre% LEQ %maxVal% (
 		set lireEntierRet=%nombre%
+		REM Traitement selon le mode de retour
+		if "%mode_retour%"=="menu_principal" goto traiter_menu_principal
+		if "%mode_retour%"=="menu_options" goto traiter_menu_options
+		if "%mode_retour%"=="config_min" goto traiter_config_min
+		if "%mode_retour%"=="config_max" goto traiter_config_max
+		if "%mode_retour%"=="config_tours" goto traiter_config_tours
+		if "%mode_retour%"=="jeu" goto traiter_jeu
 		exit /b
 	)
-:mauvais
+:lire_entier_erreur
 	echo.
 	echo Veuillez entrer un entier entre %minVal% et %maxVal%.
 	echo.
-	goto le_loop
+	goto lire_entier_loop
 
-REM ## Chargement des options sauvegardées
-:charger_options
-	if exist "%FICHIER_OPTIONS%" (
-		for /f "usebackq tokens=1-3 delims=," %%A in ("%FICHIER_OPTIONS%") do (
-			set min=%%A
-			set max=%%B
-			set tours=%%C
-		)
-	) else (
-		echo [DEBUG] Fichier options inexistant
-	)
-	if not defined min (
-		@REM echo [DEBUG] Variables non definies, utilisation des valeurs par defaut
-		set min=1
-		set max=100
-		set tours=5
-	)
-	exit /b
-
-REM ## Sauvegarde des options
-:sauvegarder_options
-	(echo %1,%2,%3) > "%FICHIER_OPTIONS%"
-	exit /b
-
-REM # Fonctions principales
-REM ## Affiche le menu principal
-:afficher_menu_principal
+REM === LECTURE ENTIER SANS LIMITE (pour config) ===
+:lire_entier_libre
 	echo.
-	echo #### Menu ####
-	echo 1 : Jouer
-	echo 2 : Options
-	echo 3 : Quitter
+	set "promptTexte=%~1"
+	set "mode_retour=%~2"
+:lire_entier_libre_loop
+	set "nonChiffre="
+	set /p saisie=%promptTexte%
+	if "%saisie%"=="" goto lire_entier_libre_erreur
+	for /f "delims=0123456789" %%C in ("%saisie%") do set nonChiffre=%%C
+	if defined nonChiffre goto lire_entier_libre_erreur
+	set /a nombre=%saisie% 2>nul
+	set lireEntierRet=%nombre%
+	REM Traitement selon le mode de retour
+	if "%mode_retour%"=="config_min" goto traiter_config_min
+	if "%mode_retour%"=="config_max" goto traiter_config_max
+	if "%mode_retour%"=="config_tours" goto traiter_config_tours
 	exit /b
-
-REM ## Affiche le menu d'options
-:afficher_menu_options
+:lire_entier_libre_erreur
 	echo.
-	echo #### Menu options ####
-	echo 1 : Choisir les limites (actuellement : %1 - %2)
-	echo 2 : Nombre de tours max (actuellement : %3)
-	exit /b
-
-REM ## Joue une partie, indique si plus grand/petit
-:jouer_partie
-	setlocal EnableDelayedExpansion
-	set minLoc=%1 & set maxLoc=%2 & set toursLoc=%3
-	set /a intervalle=maxLoc-minLoc+1
-	set /a cible=!RANDOM! %% !intervalle! + !minLoc!
+	echo Veuillez entrer un entier valide.
 	echo.
-	echo Trouvez entre !minLoc! et !maxLoc! en !toursLoc! tours
-	for /l %%N in (1,1,!toursLoc!) do (
-		call :lire_entier "Tour %%N : " !minLoc! !maxLoc!
-		set choix=!lireEntierRet!
-		if !choix! EQU !cible! (echo.& echo Gagné^^ ^^!& endlocal & exit /b)
-		if !choix! GTR !cible! (echo -) else (echo +)
-	)
-	echo.
-	echo Perdu^^ ^^! La reponse etait !cible!.
-	endlocal & exit /b
+	goto lire_entier_libre_loop
 
-REM ## Lecture d'un entier avec réaffichage du menu en cas d'erreur
+REM === FONCTION AVEC RÉAFFICHAGE MENU ===
 :lire_entier_avec_menu
 	set "menuFunction=%~1"
 	set "promptTexte=%~2"
@@ -124,40 +83,134 @@ REM ## Lecture d'un entier avec réaffichage du menu en cas d'erreur
 	echo.
 	goto lemenu_loop
 
-REM ## Gère les options et sauvegarde si modifiées
-:gerer_options
-	setlocal EnableDelayedExpansion
-	set minOpt=%1 & set maxOpt=%2 & set toursOpt=%3
-	call :lire_entier_avec_menu afficher_menu_options "? = " 1 2 !minOpt! !maxOpt! !toursOpt!
-	set choixOpt=!lireEntierRet!
-	if !choixOpt! EQU 1 (
-		call :lire_entier "Min = " 1 !maxOpt!
-		set minOpt=!lireEntierRet!
-		call :lire_entier "Max = " !minOpt! 10000
-		set maxOpt=!lireEntierRet!
-	) else if !choixOpt! EQU 2 (
-		call :lire_entier "Tours max = " 1 100
-		set toursOpt=!lireEntierRet!
-	)
-	call :sauvegarder_options !minOpt! !maxOpt! !toursOpt!
-	endlocal & set min=%minOpt% & set max=%maxOpt% & set tours=%toursOpt%
+:afficher_menu_principal
+	echo.
+	echo #### Menu ####
+	echo 1 : Jouer
+	echo 2 : Options
+	echo 3 : Quitter
 	exit /b
 
-REM # Main
-:main
-	call :charger_options
-:boucle_menu
+:afficher_menu_options
+	echo.
+	echo #### Menu options ####
+	echo 1 : Limites (actuellement : %1 - %2)
+	echo 2 : Nombre de tours max (actuellement : %3)
+	exit /b
+
+:gestion_config
+	set "action=%~1"
+	set "FICHIER_OPTIONS=%~dp0minmax_options.txt"
+	
+	if "%action%"=="lire" (
+		REM Réinitialisation des variables
+		set "min="
+		set "max="
+		set "tours="
+		
+		if exist "%FICHIER_OPTIONS%" (
+			for /f "usebackq tokens=1-3 delims=," %%A in ("%FICHIER_OPTIONS%") do (
+				set min=%%A & set max=%%B & set tours=%%C
+			)
+		)
+		
+		REM Valeurs par défaut si fichier inexistant ou variables vides
+		if not defined min set min=1 & set max=100 & set tours=5
+		
+	) else if "%action%"=="ecrire" (
+		(echo %min%,%max%,%tours%) > "%FICHIER_OPTIONS%"
+	)
+	exit /b
+
+REM === TRAITEMENTS SELON CONTEXTE ===
+:traiter_menu_principal
+	if "%lireEntierRet%"=="1" goto lancer_jeu
+	if "%lireEntierRet%"=="2" goto menu_options_loop
+	if "%lireEntierRet%"=="3" goto fin
+	goto menu_principal_loop
+
+:traiter_menu_options
+	if "%lireEntierRet%"=="1" goto configurer_limites
+	if "%lireEntierRet%"=="2" goto configurer_tours_solo
+	goto fin_options
+
+:traiter_config_min
+	set min=%lireEntierRet%
+	call :lire_entier_libre "Max = " config_max
+	exit /b
+
+:traiter_config_max
+	REM Vérification que max > min
+	if %lireEntierRet% LEQ %min% (
+		echo.
+		echo Le maximum doit etre superieur au minimum (%min%^).
+		echo.
+		call :lire_entier_libre "Max = " config_max
+		exit /b
+	)
+	set max=%lireEntierRet%
+	goto fin_options
+
+:traiter_config_tours
+	set tours=%lireEntierRet%
+	goto fin_options
+
+:traiter_jeu
+	set choix=%lireEntierRet%
+	setlocal EnableDelayedExpansion
+	if !choix! EQU !cible! (
+		echo. & echo Gagné^^ ^^! & endlocal & goto menu_principal_loop
+	)
+	if !choix! GTR !cible! (echo -) else (echo +)
+	set /a jeu_tour+=1
+	if !jeu_tour! GTR !tours! (
+		echo. & echo Perdu^^ ^^! La reponse etait !cible!. & endlocal & goto menu_principal_loop
+	)
+	call :lire_entier "Tour !jeu_tour! : " !min! !max! jeu
+	exit /b
+
+REM === BOUCLES PRINCIPALES ===
+:menu_principal_loop
 	call :lire_entier_avec_menu afficher_menu_principal "? = " 1 3
 	set choixMenu=%lireEntierRet%
+	if "%choixMenu%"=="1" goto lancer_jeu
+	if "%choixMenu%"=="2" goto menu_options_loop
+	if "%choixMenu%"=="3" goto fin
+	goto menu_principal_loop
 
-	if "%choixMenu%"=="1" (
-		call :jouer_partie %min% %max% %tours%
-	) else if "%choixMenu%"=="2" (
-		call :gerer_options %min% %max% %tours%
-	) else if "%choixMenu%"=="3" (
-		goto fin
-	)
-	goto boucle_menu
+:menu_options_loop
+	call :lire_entier_avec_menu afficher_menu_options "? = " 1 2 %min% %max% %tours%
+	set choixOpt=%lireEntierRet%
+	if "%choixOpt%"=="1" goto configurer_limites
+	if "%choixOpt%"=="2" goto configurer_tours_solo
+	goto fin_options
+
+:configurer_limites
+	call :lire_entier_libre "Min = " config_min
+	exit /b
+
+:configurer_tours_solo
+	call :lire_entier_libre "Tours max = " config_tours
+	exit /b
+
+:fin_options
+	call :gestion_config ecrire
+	goto menu_principal_loop
+
+:lancer_jeu
+	setlocal EnableDelayedExpansion
+	set /a intervalle=max-min+1
+	set /a cible=!RANDOM! %% !intervalle! + !min!
+	set jeu_tour=1
+	echo.
+	echo Trouvez entre !min! et !max! en !tours! tours
+	call :lire_entier "Tour !jeu_tour! : " !min! !max! jeu
+	exit /b
+
+REM === PROGRAMME PRINCIPAL ===
+:main
+	call :gestion_config lire
+	goto menu_principal_loop
 
 :fin
-exit /b
+	exit /b
