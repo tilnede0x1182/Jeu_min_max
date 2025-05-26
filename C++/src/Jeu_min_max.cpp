@@ -1,173 +1,116 @@
 // # Importations
-#ifdef _WIN32
-	#include <windows.h>
-#else
-	#include <sys/stat.h>
-	#include <sys/types.h>
-#endif
 #include <iostream>
 #include <fstream>
-#include <sstream>
-#include <string>
+#include <filesystem>
 #include <regex>
 #include <random>
-#include <tuple>
+#include <array>
 
 // # Données
-static const std::string FICHIER_OPTIONS = "./data/minmax_options.txt";
+static const std::regex MOTIF_ENTIER("^\\d+$");
+using Options = std::array<int,3>;	// [minimum,maximum,tours]
 
-// # Fonctions utilitaires
-// ## Lecture d'un argument de commande
-/**
-	Lit un entier sécurisé dans [min,max]
-	@message invite utilisateur
-	@min borne inférieure
-	@max borne supérieure
-*/
-static int lireEntier(const std::string &message, int min, int max)
-{
-	std::regex motif("^\\d+$");
-	std::string entree;
-	while (true)
+// # Classes utilitaires
+	// ## Gestion du fichier options
+class OptionManager {
+public:
+	/** Charge les options depuis ./data/minmax_options.txt */
+	static Options load()
 	{
-		std::cout << message;
-		if (!std::getline(std::cin, entree))
-			std::exit(0);
-		if (std::regex_match(entree, motif))
-		{
-			int valeur = std::stoi(entree);
-			if (valeur >= min && valeur <= max)
-				return valeur;
+		std::ifstream flux(path());
+		if(flux){
+			Options options{}; char separateur;
+			if(flux>>options[0]>>separateur>>options[1]>>separateur>>options[2])
+				return options;
 		}
-		std::cout << "\nVeuillez entrer un entier entre " << min << " et " << max << ".\n";
+		return {1,100,5};
 	}
-}
-
-// # Fonctions utilitaires principales
-// ## Gestion des options persistance
-static std::tuple<int, int, int> chargerOptions()
-{
-	std::ifstream fichier(FICHIER_OPTIONS);
-	if (fichier)
+	/** Sauvegarde les options */
+	static void save(int minimum,int maximum,int nombreTours)
 	{
-		std::string contenu;
-		std::getline(fichier, contenu);
-		std::stringstream flux(contenu);
-		std::string seg;
-		int valeurs[3]{};
-		for (int index = 0; index < 3 && std::getline(flux, seg, ','); ++index)
-			valeurs[index] = std::stoi(seg);
-		if (valeurs[2])
-			return {valeurs[0], valeurs[1], valeurs[2]};
+		std::ofstream(path())<<minimum<<','<<maximum<<','<<nombreTours;
 	}
-	return {1, 100, 5};
-}
-
-/**
-	Crée le dossier ./data si nécessaire (Windows et POSIX)
-*/
-static void creerDossierData()
-{
-	#ifdef _WIN32
-		CreateDirectoryA("./data", nullptr);
-	#else
-		mkdir("./data", 0775);
-	#endif
-}
-
-static void sauvegarderOptions(int min, int max, int tours)
-{
-	creerDossierData();
-	std::ofstream(FICHIER_OPTIONS) << min << ',' << max << ',' << tours;
-}
-
-// # Fonctions principales
-class JeuMinMax
-{
 private:
-	int borneMin, borneMax, nombreTours;
-	std::mt19937 moteur{std::random_device{}()};
+	static std::filesystem::path path()
+	{
+		auto dossier=std::filesystem::current_path()/"data";
+		std::filesystem::create_directories(dossier);	// Windows & POSIX
+		return dossier/"minmax_options.txt";
+	}
+};
 
+// # Classe principale
+class JeuMinMax {
+private:
+	int borneMinimum, borneMaximum, limiteTours;
+	std::mt19937 generateur{std::random_device{}()};
+	/** Lecture sécurisée d'un entier */
+	int lireEntier(const std::string &invite,int intervalMin,int intervalMax) const
+	{
+		std::string saisie;
+		while(true){
+			std::cout<<invite;
+			if(!std::getline(std::cin,saisie)) std::exit(0);
+			if(std::regex_match(saisie,MOTIF_ENTIER)){
+				int valeur=std::stoi(saisie);
+				if(valeur>=intervalMin&&valeur<=intervalMax) return valeur;
+			}
+			std::cout<<"\nVeuillez entrer un entier entre "<<intervalMin
+			         <<" et "<<intervalMax<<".\n";
+		}
+	}
+	void afficherMenuPrincipal() const
+	{
+		std::cout<<"\n#### Menu ####\n1 : Jouer\n2 : Options\n3 : Quitter\n";
+	}
+	void afficherMenuOptions() const
+	{
+		std::cout<<"\n#### Menu options ####\n1 : Choisir les limites (actuellement : "
+		         <<borneMinimum<<" - "<<borneMaximum
+		         <<")\n2 : Nombre de tours max (actuellement : "
+		         <<limiteTours<<")\n";
+	}
+	void jouerPartie()
+	{
+		std::uniform_int_distribution<int> distribution(borneMinimum,borneMaximum);
+		int nombreCible=distribution(generateur);
+		std::cout<<"\nTrouvez entre "<<borneMinimum<<" et "<<borneMaximum
+		         <<" en "<<limiteTours<<" tours\n";
+		for(int indiceTour=1;indiceTour<=limiteTours;++indiceTour){
+			int choix=lireEntier("Tour "+std::to_string(indiceTour)+" : ",
+			                     borneMinimum,borneMaximum);
+			if(choix==nombreCible){std::cout<<"\nGagné !\n";return;}
+			std::cout<<(choix>nombreCible?'-':'+')<<'\n';
+		}
+		std::cout<<"\nPerdu ! La réppnse était "<<nombreCible<<".\n";
+	}
+	void menuOptions()
+	{
+		afficherMenuOptions();
+		int choixOption=lireEntier("? = ",1,2);
+		if(choixOption==1){
+			borneMinimum=lireEntier("\nMin = ",1,borneMaximum);
+			borneMaximum=lireEntier("\nMax = ",borneMinimum,10000);
+		}else{
+			limiteTours=lireEntier("\nTours max = ",1,100);
+		}
+		OptionManager::save(borneMinimum,borneMaximum,limiteTours);
+	}
 public:
 	JeuMinMax()
 	{
-		std::tie(borneMin, borneMax, nombreTours) = chargerOptions();
+		Options opts=OptionManager::load();
+		borneMinimum=opts[0]; borneMaximum=opts[1]; limiteTours=opts[2];
 	}
-	/**
-		Affiche le menu principal
-	*/
-	void afficherMenuPrincipal() const
+	/** Boucle principale */
+	void run()
 	{
-		std::cout << "\n#### Menu ####\n1 : Jouer\n2 : Options\n3 : Quitter\n";
-	}
-	/**
-		Affiche le menu Options
-	*/
-	void afficherMenuOptions() const
-	{
-		std::cout << "\n#### Menu options ####\n1 : Choisir les limites (actuellement : "
-				  << borneMin << " - " << borneMax
-				  << ")\n2 : Nombre de tours max (actuellement : "
-				  << nombreTours << ")\n";
-	}
-	/**
-		Lance une partie Plus/Moins
-	*/
-	void jouerPartie()
-	{
-		std::uniform_int_distribution<int> dist(borneMin, borneMax);
-		int cible = dist(moteur);
-		std::cout << "\nTrouvez entre " << borneMin << " et " << borneMax
-				  << " en " << nombreTours << " tours\n";
-		for (int tour = 1; tour <= nombreTours; ++tour)
-		{
-			int choix = lireEntier("Tour " + std::to_string(tour) + " : ",
-								   borneMin, borneMax);
-			if (choix == cible)
-			{
-				std::cout << "\nGagné !\n";
-				return;
-			}
-			std::cout << (choix > cible ? "-" : "+") << '\n';
-		}
-		std::cout << "\nPerdu ! La réppnse était " << cible << ".\n";
-	}
-	/**
-		Gère le sous-menu Options
-	*/
-	void gererOptions()
-	{
-		afficherMenuOptions();
-		switch (lireEntier("? = ", 1, 2))
-		{
-		case 1:
-			borneMin = lireEntier("\nMin = ", 1, borneMax);
-			borneMax = lireEntier("\nMax = ", borneMin, 10000);
-			break;
-		case 2:
-			nombreTours = lireEntier("\nTours max = ", 1, 100);
-			break;
-		}
-		sauvegarderOptions(borneMin, borneMax, nombreTours);
-	}
-	/**
-		Boucle principale
-	*/
-	void boucle()
-	{
-		while (true)
-		{
+		while(true){
 			afficherMenuPrincipal();
-			switch (lireEntier("? = ", 1, 3))
-			{
-			case 1:
-				jouerPartie();
-				break;
-			case 2:
-				gererOptions();
-				break;
-			case 3:
-				return;
+			switch(lireEntier("? = ",1,3)){
+				case 1: jouerPartie(); break;
+				case 2: menuOptions(); break;
+				case 3: return;
 			}
 		}
 	}
@@ -176,7 +119,6 @@ public:
 // # Main
 int main()
 {
-	JeuMinMax jeu;
-	jeu.boucle();
+	JeuMinMax().run();
 	return 0;
 }
