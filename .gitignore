@@ -1,0 +1,24 @@
+# Build system
+*.user
+*.suo
+*.userprefs
+
+# VSCode (si utilisé)
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / dumps
+*.log
+
+# Artifacts .NET
+*.dll
+*.pdb
+
+# Ignorer les répertoires de compilation dans tous les projets
+**/build/
+**/obj/
+**/bin/
+!**/bin/*.exe

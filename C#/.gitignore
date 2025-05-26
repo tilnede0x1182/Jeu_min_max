@@ -1,0 +1,24 @@
+# Build system
+./bin/
+./build/
+./obj/
+*.user
+*.suo
+*.userprefs
+
+# VSCode (si utilisé)
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / dumps
+*.log
+
+# Artifacts .NET
+*.dll
+*.pdb
+
+# Laisser le .exe
+!**/bin/*.exe
