@@ -3,8 +3,11 @@
 Random.self_init()
 
 (* # Données *)
-let chemin_dossier = Filename.dirname Sys.argv.(0)
-let fichier_options = Filename.concat chemin_dossier "minmax_options.txt"
+(* # Données *)
+let fichier_options =
+	let dossier_data = Filename.concat (Sys.getcwd()) "data" in
+	if not (Sys.file_exists dossier_data) then Unix.mkdir dossier_data 0o755;
+	Filename.concat dossier_data "minmax_options.txt"
 
 (* # Fonctions utilitaires *)
 	(**	Convertit la saisie utilisateur en entier sécurisé
