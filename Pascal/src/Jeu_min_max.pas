@@ -1,4 +1,4 @@
-{$mode objfpc}
+{$mode delphi}
 
 // # Importations
 uses
@@ -15,14 +15,14 @@ type
 // ## Lecture d'un argument de commande
 {**
 	Lecture sécurisée d'un entier dans une plage
-	@message message affiché à l'utilisateur
-	@minimum borne inférieure
-	@maximum borne supérieure
+	@message	message affiché à l'utilisateur
+	@minimum	borne inférieure
+	@maximum	borne supérieure
 }
 function lireEntier(message: string; minimum, maximum: Integer): Integer;
 var
 	entree: string;
-	valeur: LongInt;
+	valeur: Integer;
 begin
 	repeat
 		Write(message);
@@ -31,7 +31,7 @@ begin
 		if not (TryStrToInt(entree, valeur) and (valeur >= minimum) and (valeur <= maximum)) then
 			WriteLn(#10'Veuillez entrer un entier entre ', minimum, ' et ', maximum, '.');
 	until TryStrToInt(entree, valeur) and (valeur >= minimum) and (valeur <= maximum);
-	lireEntier := valeur;
+	Result := valeur;
 end;
 
 // # Fonctions utilitaires principales
@@ -41,13 +41,14 @@ end;
 }
 function optionsParDefaut(): TOptions;
 begin
-	optionsParDefaut[0] := 1;
-	optionsParDefaut[1] := 100;
-	optionsParDefaut[2] := 5;
+	Result[0] := 1;
+	Result[1] := 100;
+	Result[2] := 5;
 end;
 
 {**
 	Charge les options sauvegardées depuis le fichier
+	@return tableau [minimum, maximum, nombreTours]
 }
 function chargerOptions(): TOptions;
 var
@@ -56,27 +57,37 @@ var
 	resultat: TOptions;
 begin
 	resultat := optionsParDefaut();
-	if not FileExists(fichierOptionsRel) then Exit(resultat);
+	if not FileExists(fichierOptionsRel) then
+	begin
+		Result := resultat;
+		Exit;
+	end;
 	contenu := TStringList.Create;
 	try
 		contenu.LoadFromFile(fichierOptionsRel);
 		if contenu.Count > 0 then
 		begin
 			valeurs := SplitString(contenu[0], ',');
-			if (Length(valeurs) = 3)
-				and TryStrToInt(valeurs[0], resultat[0])
-				and TryStrToInt(valeurs[1], resultat[1])
-				and TryStrToInt(valeurs[2], resultat[2]) then
-					Exit(resultat);
+			if (Length(valeurs) = 3) and
+			   TryStrToInt(valeurs[0], resultat[0]) and
+			   TryStrToInt(valeurs[1], resultat[1]) and
+			   TryStrToInt(valeurs[2], resultat[2]) then
+			begin
+				Result := resultat;
+				Exit;
+			end;
 		end;
 	finally
 		contenu.Free;
 	end;
-	chargerOptions := resultat;
+	Result := resultat;
 end;
 
 {**
 	Sauvegarde les options dans un fichier
+	@minimum		borne inférieure
+	@maximum		borne supérieure
+	@nombreTours	nombre de tours
 }
 procedure sauvegarderOptions(minimum, maximum, nombreTours: Integer);
 var
@@ -108,6 +119,9 @@ end;
 
 {**
 	Affiche le menu d'options
+	@minimum borne inférieure
+	@maximum borne supérieure
+	@nombreTours nombre de tours max
 }
 procedure afficherMenuOptions(minimum, maximum, nombreTours: Integer);
 begin
@@ -118,6 +132,9 @@ end;
 
 {**
 	Affiche un message de fin de partie
+	@cible nombre à trouver
+	@choix choix utilisateur
+	@trouve variable modifiée à vrai si gagné
 }
 procedure afficherResultat(cible, choix: Integer; var trouve: Boolean);
 begin
@@ -132,18 +149,21 @@ end;
 
 {**
 	Lance une partie avec les paramètres actuels
+	@minimum borne inférieure
+	@maximum borne supérieure
+	@nombreTours nombre de tours max
 }
 procedure jouerPartie(minimum, maximum, nombreTours: Integer);
 var
-	cible, choix, numeroEssai: Integer;
+	cible, choix, iterator: Integer;
 	trouve: Boolean;
 begin
 	cible := minimum + Random(maximum - minimum + 1);
 	WriteLn(#10'Trouvez entre ', minimum, ' et ', maximum, ' en ', nombreTours, ' tours');
 	trouve := False;
-	for numeroEssai := 1 to nombreTours do
+	for iterator := 1 to nombreTours do
 	begin
-		choix := lireEntier('Tour ' + IntToStr(numeroEssai) + ' : ', minimum, maximum);
+		choix := lireEntier('Tour ' + IntToStr(iterator) + ' : ', minimum, maximum);
 		afficherResultat(cible, choix, trouve);
 		if trouve then Exit;
 	end;
@@ -152,6 +172,10 @@ end;
 
 {**
 	Gère les modifications des options
+	@minimum borne inférieure
+	@maximum borne supérieure
+	@nombreTours nombre de tours max
+	@return tableau [minimum, maximum, nombreTours]
 }
 function gererOptions(minimum, maximum, nombreTours: Integer): TOptions;
 var
@@ -171,7 +195,7 @@ begin
 	nouvelOptions[0] := minimum;
 	nouvelOptions[1] := maximum;
 	nouvelOptions[2] := nombreTours;
-	gererOptions := nouvelOptions;
+	Result := nouvelOptions;
 end;
 
 // # Main
