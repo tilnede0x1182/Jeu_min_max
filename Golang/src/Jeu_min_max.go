@@ -14,21 +14,21 @@ import (
 )
 
 // # Données
-var	lecteur		= bufio.NewReader(os.Stdin)
-var	motifEntier	= regexp.MustCompile(`^\d+$`)
-var	fichierOptions	string
+var lecteur = bufio.NewReader(os.Stdin)
+var motifEntier = regexp.MustCompile(`^\d+$`)
+var fichierOptions string
 
 // # Fonctions utilitaires
 // ## Lecture d'un argument de commande
 /**
  Lecture sécurisée d'un entier depuis l'utilisateur
  Contrôle l'appartenance à un intervalle [minimum, maximum]
- @param	message		message à afficher
- @param	minimum		borne inférieure
- @param	maximum		borne supérieure
- @return	entier validé
+ @param message message à afficher
+ @param minimum borne inférieure
+ @param maximum borne supérieure
+ @return entier validé
 */
-func	lireEntier(message string, minimum, maximum int) int {
+func lireEntier(message string, minimum, maximum int) int {
 	for {
 		fmt.Print(message)
 		entree, _ := lecteur.ReadString('\n')
@@ -47,9 +47,9 @@ func	lireEntier(message string, minimum, maximum int) int {
 // ## Création d'une tâche
 /**
  Charge les options sauvegardées depuis le fichier
- @return	tableau [min, max, tours]
+ @return tableau [minimum, maximum, nombreTours]
 */
-func	chargerOptions() [3]int {
+func chargerOptions() [3]int {
 	if fichierExiste(fichierOptions) {
 		contenu, exceptionLecture := os.ReadFile(fichierOptions)
 		if exceptionLecture == nil {
@@ -70,11 +70,11 @@ func	chargerOptions() [3]int {
 
 /**
  Sauvegarde les options dans le fichier
- @param	minimum		borne inférieure
- @param	maximum		borne supérieure
- @param	nombreTours	nombre de tours
+ @param minimum borne inférieure
+ @param maximum borne supérieure
+ @param nombreTours nombre de tours
 */
-func	sauvegarderOptions(minimum, maximum, nombreTours int) {
+func sauvegarderOptions(minimum, maximum, nombreTours int) {
 	contenu := fmt.Sprintf("%d,%d,%d", minimum, maximum, nombreTours)
 	exceptionEcriture := os.WriteFile(fichierOptions, []byte(contenu), 0644)
 	if exceptionEcriture != nil {
@@ -85,10 +85,10 @@ func	sauvegarderOptions(minimum, maximum, nombreTours int) {
 // ### Fonction d'existence de fichier
 /**
  Vérifie l'existence d'un fichier
- @param	chemin	chemin du fichier
- @return	booléen d'existence
+ @param chemin chemin du fichier
+ @return booléen d'existence
 */
-func	fichierExiste(chemin string) bool {
+func fichierExiste(chemin string) bool {
 	_, erreurStat := os.Stat(chemin)
 	return erreurStat == nil
 }
@@ -97,14 +97,14 @@ func	fichierExiste(chemin string) bool {
 /**
  Affiche le menu principal
 */
-func	afficherMenuPrincipal() {
+func afficherMenuPrincipal() {
 	fmt.Println("\n#### Menu ####\n1 : Jouer\n2 : Options\n3 : Quitter")
 }
 
 /**
  Affiche le menu d'options
 */
-func	afficherMenuOptions(minimum, maximum, nombreTours int) {
+func afficherMenuOptions(minimum, maximum, nombreTours int) {
 	fmt.Printf("\n#### Menu options ####\n1 : Choisir les limites (actuellement : %d - %d)\n2 : Nombre de tours max (actuellement : %d)\n",
 		minimum, maximum, nombreTours)
 }
@@ -112,7 +112,7 @@ func	afficherMenuOptions(minimum, maximum, nombreTours int) {
 /**
  Lance une partie et affiche + ou -
 */
-func	jouerPartie(minimum, maximum, nombreTours int) {
+func jouerPartie(minimum, maximum, nombreTours int) {
 	cible := minimum + rand.Intn(maximum-minimum+1)
 	fmt.Println("\nTrouvez entre", minimum, "et", maximum, "en", nombreTours, "tours")
 	for numeroEssai := 1; numeroEssai <= nombreTours; numeroEssai++ {
@@ -132,9 +132,9 @@ func	jouerPartie(minimum, maximum, nombreTours int) {
 
 /**
  Gère le menu Options et sauvegarde
- @return	tableau [min, max, tours]
+ @return tableau [minimum, maximum, nombreTours]
 */
-func	gererOptions(minimum, maximum, nombreTours int) [3]int {
+func gererOptions(minimum, maximum, nombreTours int) [3]int {
 	afficherMenuOptions(minimum, maximum, nombreTours)
 	choixOptions := lireEntier("? = ", 1, 2)
 	if choixOptions == 1 {
@@ -151,7 +151,7 @@ func	gererOptions(minimum, maximum, nombreTours int) [3]int {
 /**
  Boucle principale du programme
 */
-func	main() {
+func main() {
 	rand.Seed(time.Now().UnixNano())
 	repertoireCourant, _ := os.Getwd()
 	fichierOptions = filepath.Join(repertoireCourant, "data", "minmax_options.txt")
