@@ -15,9 +15,9 @@ type
 // ## Lecture d'un argument de commande
 {**
 	Lecture sécurisée d'un entier dans une plage
-	@message	message affiché à l'utilisateur
-	@minimum	borne inférieure
-	@maximum	borne supérieure
+	@message message affiché à l'utilisateur
+	@minimum borne inférieure
+	@maximum borne supérieure
 }
 function lireEntier(message: string; minimum, maximum: Integer): Integer;
 var
@@ -85,9 +85,9 @@ end;
 
 {**
 	Sauvegarde les options dans un fichier
-	@minimum		borne inférieure
-	@maximum		borne supérieure
-	@nombreTours	nombre de tours
+	@minimum borne inférieure
+	@maximum borne supérieure
+	@nombreTours nombre de tours
 }
 procedure sauvegarderOptions(minimum, maximum, nombreTours: Integer);
 var
