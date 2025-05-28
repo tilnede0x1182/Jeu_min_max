@@ -56,7 +56,7 @@ def jouer_partie(min, max, tours)
 			puts "+"
 		end
 	end
-	puts "\nPerdu ! La réppnse était #{cible}."
+	puts "\nPerdu ! La réponse était #{cible}."
 end
 
 # Gère les options et sauvegarde si modifiées
