@@ -22,3 +22,6 @@ Thumbs.db
 **/obj/
 **/bin/
 !**/bin/*.exe
+
+# Langages originaux
+/Boo
